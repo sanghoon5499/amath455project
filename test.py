@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import drone_controls
 
 #####  System parameters  ###########################
 tau = 0.1
@@ -23,10 +24,10 @@ I cheated a little bit by increasing the unsafe_zone borders, or else the drone 
     the drone remains in the unsafe_zone.
 """
 unsafe_zones = [
-    ([0.75, 2.25], [0.75, 2.25]),
-    ([0.75, 2.25], [2.75, 5.25]),
-    ([2.75, 4.25], [0.75, 2.25]),
-    ([2.75, 4.25], [2.25, 3.75])
+    ([1, 2], [1, 2]),
+    ([1, 2], [3, 5]),
+    ([3, 4], [1, 2]),
+    ([3, 4], [2.5, 3.5])
 ]
 
 unsafe_zones_drawings = [
@@ -51,49 +52,129 @@ target_zone = ([4, 5], [4, 5])
 
 # starting position and control input
 x = np.array([0, 0, 0, 0])  # [x_pos, x_vel, y_pos, y_vel]
-u = np.array([0.25, 0.25])  # [x_acceleration, y_acceleration]
+u = np.array([0.1, 0.1]) # drone_controls.update_acceleration_towards_target(x, target_zone)
 
 # for plotting purposes
 trajectory = [x.copy()]
 
-# drone in unsafe_zone checker
-def in_unsafe_zone(pos):
+# drone near unsafe_zone checker
+def near_unsafe_zone(pos):
     for zone in unsafe_zones:
-        if zone[0][0] <= pos[0] <= zone[0][1] and zone[1][0] <= pos[1] <= zone[1][1]:
+        radius = 0.5
+        if zone[0][0]-radius <= pos[0] <= zone[0][1]+radius and zone[1][0]-radius <= pos[2] <= zone[1][1]+radius:
             return True
     return False
 
-avoid_counter = 0
+def in_target_zone(pos):
+    if target_zone[0][0] <= pos[0] <= target_zone[0][1] and target_zone[1][0] <= pos[2] <= target_zone[1][1]:
+        return True
+    return False
 
-def turn_drone(u):
-    """
-    Turn the UAV 90 degrees by applying a strong negative acceleration in y-direction
-     - this is problematic code as it only makes the drone turn right
-     - need drone-wall positioning/detecting code to determine which of x or y velocity to change
-    """
-    return np.array([u[0], -5*u[1]]) # np.array([u[1], -u[0]])
+def go_to_target(pos):
+    target_center = np.array([(target_zone[0][0] + target_zone[0][1]) / 2,
+                              (target_zone[1][0] + target_zone[1][1]) / 2])
+    
+    position = np.array([pos[0], pos[2]])
+    direction = target_center - position
+    distance = np.linalg.norm(direction)
+    
+    # Normalize direction for unit vector
+    if distance > 0:
+        direction = direction / distance
+    
+    # Acceleration magnitude
+    acc_magnitude = max(0.1, min(1.0, distance / 5))
+    u = direction * acc_magnitude
+    
+    return u
+
+def avoid_direction(pos):
+    avoidance_dir = ""
+    for zone in unsafe_zones:
+        if zone[0][0] - 0.5 <= pos[0] <= zone[0][1] + 0.5 and zone[1][0] - 0.5 <= pos[2] <= zone[1][1] + 0.5:
+            if pos[0] < zone[0][0]:  # Obstacle is to the right
+                avoidance_dir = "OBSTACLE RIGHT"
+            elif pos[0] > zone[0][1]:  # Obstacle is to the left
+                avoidance_dir = "OBSTACLE LEFT"
+            if pos[1] < zone[1][0]:  # Obstacle is above
+                avoidance_dir = "OBSTACLE ABOVE"
+            elif pos[1] > zone[1][1]:  # Obstacle is below
+                avoidance_dir = "OBSTACLE BELOW"
+    
+    return avoidance_dir
 
 for step in range(100):
     x = A @ x + B @ u
     trajectory.append(x.copy())
 
-    if avoid_counter > 0:
-        avoid_counter -= 1  # continue avoiding for 10 steps
-        if avoid_counter == 0:
-            """
-            we reset the velocity back to facing the target, but since the drone moved a little bit,
-                we need to update these velocities so that they're facing the target again.
+    print(f"In target zone: {in_target_zone(x)}, Near unsafe zone: {near_unsafe_zone(x)}")
 
-            I think we can just calculate the slope between drone and target, and use those x and y values
-                and scale them down to an appropriate speed for u = np.array([run, rise])
-            """
-            u = np.array([0.25, 0.25])
+    # accelerate towards target until max speed reached
+    if not in_target_zone(x) and not near_unsafe_zone(x):
+        print("TO TARGET")
+        u = go_to_target(x) #np.array([u[0]*1.2, u[1]*1.2])
+    else:
+        print("MAINTAIN SPEED")
+        u = np.array([0, 0])
 
-    elif in_unsafe_zone((x[0], x[2])):
-        u = turn_drone(u)
-        avoid_counter = 5
+    if (near_unsafe_zone(x)):
+        print("NEAR UNSAFE ZONE")
+        print(f"Avoid direction: {avoid_direction(x)}")
+        
 
+    if (in_target_zone(x)):
+        print("IN TARGET ZONE")
+        u = np.array([x[1]*-1.5, x[3]*-1.5])
+
+    print("target direction: ", go_to_target(x))
+    #print(f"Step {step + 1}: x_acc={u[0]:.4f}, y_acc={u[1]:.4f}")
     print(f"Step {step + 1}: x_pos={x[0]:.4f}, x_vel={x[1]:.4f}, y_pos={x[2]:.4f}, y_vel={x[3]:.4f}")
+
+    # # if near unsafe zone, accelerate away from it
+    # if near_unsafe_zone(x): #u[1] > 0 so that we only accelerate once
+    #     print("IN UNSAFE ZONE")
+    #     if u[1] > 0:
+    #         u = np.array([u[0], -2.0])
+    #     else:
+    #         u = np.array([0, 0])
+
+    # # if we've left the unsafe zone, move towards target
+    # else:
+    #     print("NOT IN UNSAFE ZONE")
+    #     if (x[1] < 1 and x[3] < 1):
+    #         u = np.array([0.25, 0.25])
+    #     else:
+    #         u = np.array([0, 0])
+
+
+    # # if not at max speed, accelerate
+    # elif (x[1] < 1 and x[3] < 1) or not near_unsafe_zone(x):
+    #     if (not near_unsafe_zone(x)):
+    #         print("OUTSIDE UNSAFE ZONE")
+    #     else:
+    #         print("ACCELERATE")
+
+    #     # we should be accelerating towards the target, so change this later
+    #     u = np.array([u[0]*1.1, u[1]*1.1])
+    
+    # # stop accelerating
+    # else: 
+    #     u = np.array([0, 0])
+    
+
+    # if avoid_timer != 0:
+    #     avoid_timer -= 1
+
+    # if near_unsafe_zone(x) and avoid_timer == 0:
+    #     print("NEAR UNSAFE ZONE")
+    #     u = np.array([u[0] - 0.2, u[1] - 0.5])
+    #     avoid_timer = 10
+    
+    # elif avoid_timer == 0: # if not near an unsafe zone and currently not avoiding it
+    #     u = drone_controls.update_acceleration_towards_target(x, target_zone)
+
+    # print(f"x_acc = {u[0]:.4f}, y_acc = {u[1]:.4f}")
+    
 
 trajectory = np.array(trajectory)
 
