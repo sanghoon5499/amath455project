@@ -130,52 +130,6 @@ for step in range(100):
     #print(f"Step {step + 1}: x_acc={u[0]:.4f}, y_acc={u[1]:.4f}")
     print(f"Step {step + 1}: x_pos={x[0]:.4f}, x_vel={x[1]:.4f}, y_pos={x[2]:.4f}, y_vel={x[3]:.4f}")
 
-    # # if near unsafe zone, accelerate away from it
-    # if near_unsafe_zone(x): #u[1] > 0 so that we only accelerate once
-    #     print("IN UNSAFE ZONE")
-    #     if u[1] > 0:
-    #         u = np.array([u[0], -2.0])
-    #     else:
-    #         u = np.array([0, 0])
-
-    # # if we've left the unsafe zone, move towards target
-    # else:
-    #     print("NOT IN UNSAFE ZONE")
-    #     if (x[1] < 1 and x[3] < 1):
-    #         u = np.array([0.25, 0.25])
-    #     else:
-    #         u = np.array([0, 0])
-
-
-    # # if not at max speed, accelerate
-    # elif (x[1] < 1 and x[3] < 1) or not near_unsafe_zone(x):
-    #     if (not near_unsafe_zone(x)):
-    #         print("OUTSIDE UNSAFE ZONE")
-    #     else:
-    #         print("ACCELERATE")
-
-    #     # we should be accelerating towards the target, so change this later
-    #     u = np.array([u[0]*1.1, u[1]*1.1])
-    
-    # # stop accelerating
-    # else: 
-    #     u = np.array([0, 0])
-    
-
-    # if avoid_timer != 0:
-    #     avoid_timer -= 1
-
-    # if near_unsafe_zone(x) and avoid_timer == 0:
-    #     print("NEAR UNSAFE ZONE")
-    #     u = np.array([u[0] - 0.2, u[1] - 0.5])
-    #     avoid_timer = 10
-    
-    # elif avoid_timer == 0: # if not near an unsafe zone and currently not avoiding it
-    #     u = drone_controls.update_acceleration_towards_target(x, target_zone)
-
-    # print(f"x_acc = {u[0]:.4f}, y_acc = {u[1]:.4f}")
-    
-
 trajectory = np.array(trajectory)
 
 #####################################################
