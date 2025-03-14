@@ -39,14 +39,12 @@ plot(goal(1),goal(2),'mo')
 hold off
 
 
-%%%%%%     2. Original map inflation     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Make a copy of the original map and infate it by 0.1 meters. 
+% 2. Make a copy of the original map and infate it by 0.1 meters. 
 %    - Use this inflated map for path planning. 
 %    - Use the original map for visualization purpose. 
 inflatedMap = copy(occGrid);
 inflate(inflatedMap,0.1); 
 show(inflatedMap);
-
 
 %%%%%%     3. Set up state space     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %    - currently using example code's dubin's method
@@ -57,8 +55,7 @@ ss = stateSpaceDubins(bounds);
 ss.MinTurningRadius = 0.2;
 
 
-%%%%%%     4. Validate and plan     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Validate the state and plan the path to target
+% 4. Validate the state and plan the route
 stateValidator = validatorOccupancyMap(ss); 
 stateValidator.Map = inflatedMap;
 stateValidator.ValidationDistance = 0.05;
@@ -68,7 +65,7 @@ planner.MaxConnectionDistance = 0.25;
 planner.MaxIterations = 30000;
 
 
-%%%%%%     5. Check if target reached     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 planner.GoalReachedFcn = @exampleHelperCheckIfGoal;
 
 function isReached = exampleHelperCheckIfGoal(planner, goalState, newState)
@@ -79,19 +76,18 @@ function isReached = exampleHelperCheckIfGoal(planner, goalState, newState)
     end
 end
 
-%%%%%%     5. Plan pt.2 and length calc     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Reset the random number generator to ensure reproducible results. Plan
-% the path from the start to the goal pose."
+
 rng default
 [pthObj,solnInfo] = plan(planner,start,goal);
 
-% we don't actually need this info
 shortenedPath = shortenpath(pthObj,stateValidator);
 originalLength = pathLength(pthObj);
 shortenedLength = pathLength(shortenedPath);
 
 
-%%%%%%     6. Plot results     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 show(occGrid)
 hold on
 
