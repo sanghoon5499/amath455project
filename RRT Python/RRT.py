@@ -78,8 +78,7 @@ def is_collision_free(x1, x2):
 
 ##### x_new = Ax + Bu, control vector modified with proportional control k_p #####
 def steer(x_nearest, x_rand):
-    """Compute new state using system dynamics x_new = Ax + Bu."""
-    K_p = 1.5
+    K_p = 2
     u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / step_size, -1, 1)
     x_new = A @ x_nearest + B @ u
     x_new[1] = np.clip(x_new[1], -1, 1)
