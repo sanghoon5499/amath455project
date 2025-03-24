@@ -31,10 +31,19 @@ unsafe_zones = [
     ([0, 5], [5, 5.1]),
 ]
 
-target_zone = ([4, 5], [4, 5])
+##### Test cases for various target locations #####
+target_zone = ([4, 5], [4, 5]) # top right
+# target_zone = ([4, 5], [0, 1]) # bottom right
+# target_zone = ([0, 1], [4, 5]) # top left
+
+##### Test cases for various starting locations #####
+x0 = np.array([0.5, 0, 0.5, 0]) # bottom left
+# x0 = np.array([4.5, 0, 0.5, 0]) # bottom right
+# x0 = np.array([0.5, 0, 4.5, 0]) # top left
+# x0 = np.array([3.5, 0, 4.5, 0]) # top right (right beside the target)
+
 
 ##### RRT parameters #####
-x0 = np.array([0.5, 0, 0.5, 0])
 max_iters = 10000
 step_size = 0.5
 
