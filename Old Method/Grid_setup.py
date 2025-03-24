@@ -1,21 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import scipy.linalg
+import random
 
-#####  System parameters  ###########################
+##### System parameters #####
 tau = 0.1
 A = np.array(
     [[1, tau, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 1, tau],
-    [0, 0, 0, 1]]
+     [0, 1, 0, 0],
+     [0, 0, 1, tau],
+     [0, 0, 0, 1]]
 )
 
 B = np.array(
     [[0.5 * tau**2, 0],
-    [tau, 0],
-    [0, 0.5 * tau**2],
-    [0, tau]]
+     [tau, 0],
+     [0, 0.5 * tau**2],
+     [0, tau]]
 )
 
 unsafe_zones = [
@@ -27,43 +27,95 @@ unsafe_zones = [
 
 target_zone = ([4, 5], [4, 5])
 
-#####################################################
+# RRT parameters
+x0 = np.array([0.5, 0, 0.5, 0])  # Start state
+max_iters = 1000
+step_size = 0.5
 
-#####  Simulate System  #############################
-# TODO
+class Node:
+    def __init__(self, state, parent=None):
+        self.state = state
+        self.parent = parent
 
-# Starting position
-x0 = np.array([0.5, 0, 0.5, 0])  # [x_pos, x_vel, y_pos, y_vel]
+def sample_free():
+    """Randomly sample a state within the boundaries."""
+    x = np.random.uniform(0, 5)
+    y = np.random.uniform(0, 5)
+    return np.array([x, 0, y, 0])
 
+def nearest(tree, sample):
+    """Find the nearest node in the tree to the sample."""
+    return min(tree, key=lambda node: np.linalg.norm(node.state[[0,2]] - sample[[0,2]]))
 
+def is_collision_free(x1, x2):
+    """Check if the path between x1 and x2 is collision-free."""
+    for zone in unsafe_zones:
+        if min(x1[0], x2[0]) < zone[0][1] and max(x1[0], x2[0]) > zone[0][0] and \
+           min(x1[2], x2[2]) < zone[1][1] and max(x1[2], x2[2]) > zone[1][0]:
+            return False
+    return True
 
-#####################################################
+def steer(x_nearest, x_rand):
+    """Move from x_nearest towards x_rand by step_size."""
+    direction = x_rand - x_nearest
+    direction = direction / np.linalg.norm(direction[[0,2]]) * step_size
+    x_new = x_nearest + direction
+    return x_new if is_collision_free(x_nearest, x_new) else None
 
-#####  Plot results #################################
+# RRT Algorithm
+tree = [Node(x0)]
+for _ in range(max_iters):
+    x_rand = sample_free()
+    nearest_node = nearest(tree, x_rand)
+    x_new = steer(nearest_node.state, x_rand)
+    if x_new is not None:
+        new_node = Node(x_new, nearest_node)
+        tree.append(new_node)
+        if target_zone[0][0] <= x_new[0] <= target_zone[0][1] and target_zone[1][0] <= x_new[2] <= target_zone[1][1]:
+            goal_node = new_node
+            break
+else:
+    goal_node = None
+
+# Reconstruct path
+path = []
+if goal_node:
+    node = goal_node
+    while node:
+        path.append(node.state)
+        node = node.parent
+    path.reverse()
+
+# Plot results
 fig, ax = plt.subplots(figsize=(6, 6))
-
 ax.set_xlim(0, 5)
 ax.set_ylim(0, 5)
-ax.set_xlabel(r"$x_1$")
-ax.set_ylabel(r"$x_3$")
-ax.set_title("Reach-Avoid-Stay Path")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_title("RRT Path")
 
-# Obstacle boxes
+# Plot obstacles
 for zone in unsafe_zones:
     rect = plt.Rectangle((zone[0][0], zone[1][0]), zone[0][1]-zone[0][0], zone[1][1]-zone[1][0],
-                         color="red", alpha=0.5, label="Obstacle" if "Obstacle" not in ax.get_legend_handles_labels()[1] else "")
+                         color="red", alpha=0.5)
     ax.add_patch(rect)
 
-# Target box
+# Plot target zone
 rect = plt.Rectangle((target_zone[0][0], target_zone[1][0]), 
                      target_zone[0][1] - target_zone[0][0], target_zone[1][1] - target_zone[1][0],
-                     color="blue", alpha=0.5, label="Target Set")
+                     color="blue", alpha=0.5)
 ax.add_patch(rect)
 
-# TODO: Plot trajectory
+# Plot tree
+for node in tree:
+    if node.parent:
+        ax.plot([node.state[0], node.parent.state[0]], [node.state[2], node.parent.state[2]], "g.-")
 
+# Plot path
+if path:
+    path = np.array(path)
+    ax.plot(path[:, 0], path[:, 2], "b.-", label="Planned Path")
 
-
-ax.legend(loc='upper left')
+ax.legend()
 plt.grid()
 plt.show()
