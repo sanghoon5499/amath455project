@@ -19,23 +19,31 @@ B = np.array(
 )
 
 unsafe_zones = [
+    # obstacles:
     ([1, 2], [1, 2]),
     ([1, 2], [3, 5]),
     ([3, 4], [1, 2]),
-    ([3, 4], [2.5, 3.5])
+    ([3, 4], [2.5, 3.5]),
+
+    # walls:
+    ([-0.1, 0], [0, 5]),
+    ([5, 5.1], [0, 5]),
+    ([0, 5], [-0.1, 0]),
+    ([0, 5], [5, 5.1]),
 ]
 
 target_zone = ([4, 5], [4, 5])
 
 # RRT parameters
 x0 = np.array([0.5, 0, 0.5, 0])  # Start state
-max_iters = 1000
+max_iters = 10000
 step_size = 0.5
 
 class Node:
     def __init__(self, state, parent=None):
         self.state = state
         self.parent = parent
+        self.u = None  # Control input
 
 def sample_free():
     """Randomly sample a state within the boundaries."""
@@ -56,20 +64,20 @@ def is_collision_free(x1, x2):
     return True
 
 def steer(x_nearest, x_rand):
-    """Move from x_nearest towards x_rand by step_size."""
-    direction = x_rand - x_nearest
-    direction = direction / np.linalg.norm(direction[[0,2]]) * step_size
-    x_new = x_nearest + direction
-    return x_new if is_collision_free(x_nearest, x_new) else None
+    """Compute new state using system dynamics x_new = Ax + Bu."""
+    u = np.clip((x_rand[[0,2]] - x_nearest[[0,2]]) / step_size, -1, 1)
+    x_new = A @ x_nearest + B @ u
+    return (x_new, u) if is_collision_free(x_nearest, x_new) else (None, None)
 
 # RRT Algorithm
 tree = [Node(x0)]
 for _ in range(max_iters):
     x_rand = sample_free()
     nearest_node = nearest(tree, x_rand)
-    x_new = steer(nearest_node.state, x_rand)
+    x_new, u_new = steer(nearest_node.state, x_rand)
     if x_new is not None:
         new_node = Node(x_new, nearest_node)
+        new_node.u = u_new
         tree.append(new_node)
         if target_zone[0][0] <= x_new[0] <= target_zone[0][1] and target_zone[1][0] <= x_new[2] <= target_zone[1][1]:
             goal_node = new_node
@@ -92,7 +100,7 @@ ax.set_xlim(0, 5)
 ax.set_ylim(0, 5)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
-ax.set_title("RRT Path")
+ax.set_title("RRT Path with Dynamics")
 
 # Plot obstacles
 for zone in unsafe_zones:
