@@ -81,8 +81,17 @@ def steer(x_nearest, x_rand):
     K_p = 2
     u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / step_size, -1, 1)
     x_new = A @ x_nearest + B @ u
-    x_new[1] = np.clip(x_new[1], -1, 1)
-    x_new[3] = np.clip(x_new[3], -1, 1)
+
+    if abs(x_new[1]) > 1:
+        excess = x_new[1] - np.sign(x_new[1]) * 1 
+        u[0] = -excess
+
+    if abs(x_new[3]) > 1:
+        excess = x_new[3] - np.sign(x_new[3]) * 1 
+        u[1] = -excess
+
+    x_new = A @ x_nearest + B @ u
+
     return (x_new, u) if is_collision_free(x_nearest, x_new) else (None, None)
 
 ##### RRT loop #####
