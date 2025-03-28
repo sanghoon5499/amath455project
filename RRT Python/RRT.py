@@ -44,7 +44,7 @@ x0 = np.array([0.5, 0, 0.5, 0]) # bottom left
 
 
 ##### RRT parameters #####
-max_iters = 10000
+max_iters = 5000
 
 class Node:
     def __init__(self, state, parent=None):
@@ -81,17 +81,16 @@ def steer(x_nearest, x_rand):
     u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / tau, -1, 1)
     x_new = A @ x_nearest + B @ u
 
-    if abs(x_new[1]) > 1:
-        excess = x_new[1] - np.sign(x_new[1]) * 1 
-        u[0] = -excess
-
-    if abs(x_new[3]) > 1:
-        excess = x_new[3] - np.sign(x_new[3]) * 1 
-        u[1] = -excess
+    u[0] = adjust_u(u[0], x_new[1])
+    u[1] = adjust_u(u[1], x_new[3])
 
     x_new = A @ x_nearest + B @ u
 
     return (x_new, u) if is_collision_free(x_nearest, x_new) else (None, None)
+
+##### Check if velocities > 1 and modify u #####
+def adjust_u(u, x_new_velocity):
+    return u if abs(x_new_velocity) <= 1 else -(x_new_velocity - np.sign(x_new_velocity) * 1)
 
 ##### RRT loop #####
 tree = [Node(x0)]
