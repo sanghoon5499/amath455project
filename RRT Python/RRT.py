@@ -45,7 +45,6 @@ x0 = np.array([0.5, 0, 0.5, 0]) # bottom left
 
 ##### RRT parameters #####
 max_iters = 10000
-step_size = 0.5
 
 class Node:
     def __init__(self, state, parent=None):
@@ -79,7 +78,7 @@ def is_collision_free(x1, x2):
 ##### x_new = Ax + Bu, control vector modified with proportional control k_p #####
 def steer(x_nearest, x_rand):
     K_p = 2
-    u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / step_size, -1, 1)
+    u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / tau, -1, 1)
     x_new = A @ x_nearest + B @ u
 
     if abs(x_new[1]) > 1:
