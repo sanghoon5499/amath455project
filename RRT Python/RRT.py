@@ -75,14 +75,22 @@ def is_collision_free(x1, x2):
             return False
     return True
 
+def lyapunov_control(x_new_velocity):
+    return -(x_new_velocity - np.sign(x_new_velocity) * (x_new_velocity * 0.1))
+
 ##### x_new = Ax + Bu, control vector modified with proportional control k_p #####
 def steer(x_nearest, x_rand):
     K_p = 2
     u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / tau, -1, 1)
     x_new = A @ x_nearest + B @ u
 
-    u[0] = adjust_u(u[0], x_new[1])
-    u[1] = adjust_u(u[1], x_new[3])
+    if target_zone[0][0] <= x_nearest[0] <= target_zone[0][1] and target_zone[1][0] <= x_nearest[2] <= target_zone[1][1]:
+        u[0] = lyapunov_control(x_new[1])
+        u[1] = lyapunov_control(x_new[3])
+
+    else:
+        u[0] = adjust_u(u[0], x_new[1])
+        u[1] = adjust_u(u[1], x_new[3])
 
     x_new = A @ x_nearest + B @ u
 
@@ -103,8 +111,9 @@ for _ in range(max_iters):
         new_node.u = u_new
         tree.append(new_node)
         if target_zone[0][0] <= x_new[0] <= target_zone[0][1] and target_zone[1][0] <= x_new[2] <= target_zone[1][1]:
-            goal_node = new_node
-            break
+            if (x_new[1] < 0.1 and x_new[3] < 0.1):
+                goal_node = new_node
+                break
 else:
     goal_node = None
 
