@@ -116,7 +116,7 @@ for _ in range(max_iters):
         new_node.u = u_new
         tree.append(new_node)
         if target_zone[0][0] <= x_new[0] <= target_zone[0][1] and target_zone[1][0] <= x_new[2] <= target_zone[1][1]:
-            if (x_new[1] < 0.1 and x_new[3] < 0.1):
+            if (x_new[1] < 0.01 and x_new[3] < 0.01):
                 goal_node = new_node
                 break
 else:
@@ -134,6 +134,23 @@ if goal_node:
         node = node.parent
     path.reverse()
     control_inputs.reverse()
+
+##### Plot x_vel and y_vel over steps (Figure 2 requirement) #####
+if path:
+    steps = np.arange(len(path))  # Number of steps as x-axis
+    x_vels = [state[1] for state in path]
+    y_vels = [state[3] for state in path]
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(steps, x_vels, label="x velocity", marker="o")
+    ax.plot(steps, y_vels, label="y velocity", marker="s")
+
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Velocity")
+    ax.set_title("Velocity Over Steps")
+    ax.legend()
+    ax.grid()
+    plt.show()
 
 ##### Grid set up #####
 fig, ax = plt.subplots(figsize=(6, 6))
