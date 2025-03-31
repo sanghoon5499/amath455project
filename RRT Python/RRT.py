@@ -23,6 +23,10 @@ unsafe_zones = [
     ([1, 2], [3, 5]),
     ([3, 4], [1, 2]),
     ([3, 4], [2.5, 3.5]),
+    # ([0, 3], [1, 2]),
+    # ([4, 5], [1, 2]),
+    # ([0, 1], [3, 4]),
+    # ([2, 5], [3, 4]),
 
     # walls:
     ([-0.1, 0], [0, 5]),
@@ -75,9 +79,6 @@ def is_collision_free(x1, x2):
             return False
     return True
 
-def lyapunov_control(x_new_velocity):
-    return -(x_new_velocity - np.sign(x_new_velocity) * (x_new_velocity * 0.1))
-
 ##### x_new = Ax + Bu, control vector modified with proportional control k_p #####
 def steer(x_nearest, x_rand):
     K_p = 2
@@ -99,6 +100,10 @@ def steer(x_nearest, x_rand):
 ##### Check if velocities > 1 and modify u #####
 def adjust_u(u, x_new_velocity):
     return u if abs(x_new_velocity) <= 1 else -(x_new_velocity - np.sign(x_new_velocity) * 1)
+
+##### Reduce velocity if node is in target zone #####
+def lyapunov_control(x_new_velocity):
+    return -(x_new_velocity - np.sign(x_new_velocity) * (x_new_velocity * 0.1))
 
 ##### RRT loop #####
 tree = [Node(x0)]
