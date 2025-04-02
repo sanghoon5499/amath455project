@@ -84,6 +84,10 @@ def steer(x_nearest, x_rand):
     K_p = 2
     u = np.clip(K_p * (x_rand[[0,2]] - x_nearest[[0,2]]) / tau, -1, 1)
     x_new = A @ x_nearest + B @ u
+    print("_____________________________________")
+    print(f"1 | A @ x_nearest = {A @ x_nearest}")
+    print(f"1 | B @ u = {B @ u}")
+    print(f"x_new before: [{x_new[1]}, {x_new[3]}]")
 
     if target_zone[0][0] <= x_nearest[0] <= target_zone[0][1] and target_zone[1][0] <= x_nearest[2] <= target_zone[1][1]:
         u[0] = lyapunov_control(x_new[1])
@@ -92,8 +96,12 @@ def steer(x_nearest, x_rand):
     else:
         u[0] = adjust_u(u[0], x_new[1])
         u[1] = adjust_u(u[1], x_new[3])
+        print(f"u: [{u[0]}, {u[1]}]")
 
     x_new = A @ x_nearest + B @ u
+    print(f"2 | A @ x_nearest = {A @ x_nearest}")
+    print(f"2 | B @ u = {B @ u}")
+    print(f"x_new after: [{x_new[1]}, {x_new[3]}]")
 
     return (x_new, u) if is_collision_free(x_nearest, x_new) else (None, None)
 
@@ -148,6 +156,22 @@ if path:
     ax.set_xlabel("Steps")
     ax.set_ylabel("Velocity")
     ax.set_title("Velocity Over Steps")
+    ax.legend()
+    ax.grid()
+    plt.show()
+
+##### Plot x_accel and y_accel over steps #####
+if control_inputs:
+    steps = np.arange(len(control_inputs))  # Number of steps as x-axis
+    x_accels = [u[0] for u in control_inputs]
+    y_accels = [u[1] for u in control_inputs]
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(steps, x_accels, label="x acceleration", marker="o")
+    ax.plot(steps, y_accels, label="y acceleration", marker="s")
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Acceleration")
+    ax.set_title("Control Input u Over Steps")
     ax.legend()
     ax.grid()
     plt.show()
