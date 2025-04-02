@@ -90,8 +90,8 @@ def steer(x_nearest, x_rand):
     print(f"x_new before: [{x_new[1]}, {x_new[3]}]")
 
     if target_zone[0][0] <= x_nearest[0] <= target_zone[0][1] and target_zone[1][0] <= x_nearest[2] <= target_zone[1][1]:
-        u[0] = lyapunov_control(x_new[1])
-        u[1] = lyapunov_control(x_new[3])
+        u[0] = stop_drone_control(x_new[1])
+        u[1] = stop_drone_control(x_new[3])
 
     else:
         u[0] = adjust_u(u[0], x_new[1])
@@ -110,7 +110,7 @@ def adjust_u(u, x_new_velocity):
     return u if abs(x_new_velocity) <= 1 else -(x_new_velocity - np.sign(x_new_velocity) * 1)
 
 ##### Reduce velocity if node is in target zone #####
-def lyapunov_control(x_new_velocity):
+def stop_drone_control(x_new_velocity):
     return -(x_new_velocity - np.sign(x_new_velocity) * (x_new_velocity * 0.1))
 
 ##### RRT loop #####
