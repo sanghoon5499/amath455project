@@ -48,7 +48,7 @@ x0 = np.array([0.5, 0, 0.5, 0]) # bottom left
 
 
 ##### RRT parameters #####
-max_iters = 5000
+max_iters = 10000
 
 class Node:
     def __init__(self, state, parent=None):
