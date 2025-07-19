@@ -1,1 +1,3 @@
-# amath455project
+# Two Dimensional Reach-Avoid-Stay Path Planning using RRT in Python
+
+This paper explores a modified implementa tion of the Rapidly exploring Random Tree (RRT) algorithm to solve the Reach-Avoid-Stay problem for a drone operating in a two-dimensional grid environment. The goal is to dynamically generate a feasible path from a given start point to a target zone while avoiding obstacle zones, under velocity and acceleration constraints. Many path finding algorithms were explored, but RRT was particularly good for this problem as it is scalable to maze configurations and has a comparatively low computational cost. Additional key optimizations were introduced: (1) a goal bias constant to guide the exploration process towards the target zone, and (2) a proportional gain factor KP helping to adjust control inputs based on the distance to the sampled node. The proposed approach significantly improved path efficiency and reduced the computational time.
